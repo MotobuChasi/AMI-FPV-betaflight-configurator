@@ -1,7 +1,7 @@
 <?xml version='1.0' encoding='utf-8'?>
 <resources>
-    <string name="app_name">Betaflight App</string>
-    <string name="title_activity_main">Betaflight App</string>
-    <string name="package_name">betaflight.app</string>
-    <string name="custom_url_scheme">betaflight.app</string>
+    <string name="app_name">AMI FPV Configurator App</string>
+    <string name="title_activity_main">AMI FPV Configurator App</string>
+    <string name="package_name">AMI_FPV_Configurator.app</string>
+    <string name="custom_url_scheme">AMI_FPV_Configurator.app</string>
 </resources>
