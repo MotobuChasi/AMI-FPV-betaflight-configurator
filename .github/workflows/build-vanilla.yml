@@ -25,6 +25,9 @@ jobs:
 
       - name: Build Web App
         run: npm run build
+        
+      - name: Generate Capacitor Config
+        run: node capacitor.config.generator.mjs
 
       - name: Sync Capacitor
         run: npx cap sync android
