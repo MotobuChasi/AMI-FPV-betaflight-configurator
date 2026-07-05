@@ -11,17 +11,17 @@
 @theme static {
     /* Extending Tailwind colors with Betaflight primary colors */
     /* Used for Nuxt UI and referenced further in theme.css */
-    --color-primary-50: #fffeea;
-    --color-primary-100: #fffac5;
-    --color-primary-200: #fff685;
-    --color-primary-300: #ffea46;
-    --color-primary-400: #ffc526;
-    --color-primary-500: #ffbb00;
-    --color-primary-600: #e29000;
-    --color-primary-700: #bb6502;
-    --color-primary-800: #984e08;
-    --color-primary-900: #7c400b;
-    --color-primary-950: #482100;
+        --color-primary-50: #fef2f2;
+    --color-primary-100: #fee2e2;
+    --color-primary-200: #fecaca;
+    --color-primary-300: #fca5a5;
+    --color-primary-400: #f87171;
+    --color-primary-500: #e2123f;
+    --color-primary-600: #be123c;
+    --color-primary-700: #9f1239;
+    --color-primary-800: #881337;
+    --color-primary-900: #711332;
+    --color-primary-950: #4c0519;
 
     --color-neutral-850: oklch(23.5% 0 0);
 }
@@ -42,10 +42,11 @@ html {
     --primary-900: var(--color-primary-900);
     --primary-950: var(--color-primary-950);
 
-    --primary-transparent-1: rgba(255, 187, 0, 0.1);
-    --primary-transparent-2: rgba(255, 187, 0, 0.2);
-    --primary-transparent-3: rgba(255, 187, 0, 0.3);
-    --primary-transparent-4: rgba(255, 187, 0, 0.4);
+    --primary-transparent-1: rgba(226, 18, 63, 0.1);
+    --primary-transparent-2: rgba(226, 18, 63, 0.2);
+    --primary-transparent-3: rgba(226, 18, 63, 0.3);
+    --primary-transparent-4: rgba(226, 18, 63, 0.4);
+
 
     --surface-50: hsl(0, 0%, 100%);
     --surface-100: hsl(0, 0%, 98%);
@@ -125,17 +126,18 @@ html {
 }
 
 body[data-theme="amber"] {
-    --primary-50: #fffbe8;
-    --primary-100: #fff5d3;
-    --primary-200: #ffeba9;
-    --primary-300: #ffdf76;
-    --primary-400: #ffd03d;
-    --primary-500: #ffa724;
-    --primary-600: #e69400;
-    --primary-700: #cc8200;
-    --primary-800: #a86700;
-    --primary-900: #7a4600;
-    --primary-950: #5c2f00;
+    --primary-50: #fef2f2;
+    --primary-100: #fee2e2;
+    --primary-200: #fecaca;
+    --primary-300: #fca5a5;
+    --primary-400: #f87171;
+    --primary-500: #e2123f;
+    --primary-600: #be123c;
+    --primary-700: #9f1239;
+    --primary-800: #881337;
+    --primary-900: #711332;
+    --primary-950: #4c0519;
+
 
     /* Directly replacing Nuxt UI primary colors with Betaflight Amber primary colors */
     --ui-primary: var(--primary-500);
