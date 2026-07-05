@@ -1,5 +1,5 @@
 {
-  "appId": "betaflight.app",
-  "appName": "Betaflight App",
+  "appId": "com.amidrones.configurator",
+  "appName": "AMI FPV Configurator",
   "webDir": "src/dist"
 }
