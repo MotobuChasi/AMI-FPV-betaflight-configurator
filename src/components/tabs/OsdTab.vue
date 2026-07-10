@@ -419,7 +419,7 @@
                 <UModal
                     :open="fontManagerOpen"
                     :title="$t('osdSetupFontManagerTitle')"
-                    :ui="{ overlay: 'z-3000', content: 'w-[750px] z-3001' }"
+                    :ui="{ content: 'w-[750px]' }"
                     @update:open="(value) => !value && closeFontManager()"
                 >
                     <template #body>
@@ -480,9 +480,11 @@
                             </UButton>
                         </div>
 
-                        <div class="tab-osd-upload-progress mb-3">
-                            <progress class="tab-osd-progress-bar" :value="uploadProgress" min="0" max="100"></progress>
-                            <div class="tab-osd-progress-label">{{ uploadProgressLabel }}</div>
+                        <div class="relative mb-3">
+                            <UProgress :model-value="uploadProgress" :max="100" size="2xl" color="warning" />
+                            <div class="absolute inset-0 flex items-center justify-center text-xs font-bold text-white">
+                                {{ uploadProgressLabel }}
+                            </div>
                         </div>
 
                         <UButton @click="flashFont()" color="success" size="sm">
@@ -532,6 +534,7 @@ import UiBox from "@/components/elements/UiBox.vue";
 import HelpIcon from "@/components/elements/HelpIcon.vue";
 import SettingRow from "@/components/elements/SettingRow.vue";
 import { i18n } from "@/js/localization";
+import { clamp } from "@/js/utils/common";
 
 import { FONT, SYM } from "@/js/utils/osdFont";
 import { OSD_CONSTANTS } from "./osd/osd_constants";
@@ -986,8 +989,8 @@ function getDragPreviewAnchor(displayItem, dragX, dragY, displaySize, dragPrevie
     const anchorY = (localY - dragPreviewMeta.minY) * charHeight + charHeight / 2;
 
     return {
-        x: Math.min(Math.max(anchorX, 0), dragPreviewMeta.widthPx),
-        y: Math.min(Math.max(anchorY, 0), dragPreviewMeta.heightPx),
+        x: clamp(anchorX, 0, dragPreviewMeta.widthPx),
+        y: clamp(anchorY, 0, dragPreviewMeta.heightPx),
     };
 }
 
@@ -1077,10 +1080,10 @@ function clampStringPreviewPosition(displayItem, position, displaySize, cursorY)
     const elementWidth = Array.from(displayItem.preview || "").length;
     const maxX = Math.max(0, displaySize.x - elementWidth);
     const maxY = Math.max(0, displaySize.y - 1);
-    const row = Math.min(Math.max(cursorY, 0), maxY);
+    const row = clamp(cursorY, 0, maxY);
 
     const rawX = position - row * displaySize.x;
-    const x = Math.min(Math.max(rawX, 0), maxX);
+    const x = clamp(rawX, 0, maxX);
 
     return row * displaySize.x + x;
 }
@@ -1111,18 +1114,26 @@ function clampObjectArrayPreviewPosition(position, displaySize, limits) {
     const selectedPositionX = ((position % displaySize.x) + displaySize.x) % displaySize.x;
     const selectedPositionY = Math.floor(position / displaySize.x);
 
-    if (limits.minX < 0 && selectedPositionX + limits.minX < 0) {
+    if (selectedPositionX + limits.minX < 0) {
         position += Math.abs(selectedPositionX + limits.minX);
     } else if (limits.maxX > 0 && selectedPositionX + limits.maxX >= displaySize.x) {
         position -= selectedPositionX + limits.maxX + 1 - displaySize.x;
     }
-    if (limits.minY < 0 && selectedPositionY + limits.minY < 0) {
+    if (selectedPositionY + limits.minY < 0) {
         position += Math.abs(selectedPositionY + limits.minY) * displaySize.x;
     } else if (limits.maxY > 0 && selectedPositionY + limits.maxY >= displaySize.y) {
         position -= (selectedPositionY + limits.maxY - displaySize.y + 1) * displaySize.x;
     }
 
-    return Math.max(0, position);
+    if (position < 0) {
+        // The anchor of an element whose cells all sit below it (positive minY) may
+        // still land above row 0 after clamping, but positions pack into unsigned
+        // x/y for MSP (see stores/osd.js pack.position): settle on row 0, keeping
+        // the column instead of jumping to the top-left corner.
+        position = ((position % displaySize.x) + displaySize.x) % displaySize.x;
+    }
+
+    return position;
 }
 
 function clampArrayPreviewPosition(displayItem, position, displaySize, cursorX) {
@@ -1847,43 +1858,6 @@ onUnmounted(() => {
     background: currentColor;
     border-radius: 50%;
     opacity: 0.8;
-}
-
-/* Upload progress bar */
-.tab-osd-upload-progress {
-    display: grid;
-    grid-template-areas: "area";
-    width: 100%;
-}
-
-.tab-osd-progress-bar {
-    grid-area: area;
-    width: 100%;
-    height: 26px;
-    border-radius: 5px;
-    border: 1px solid var(--surface-500);
-    appearance: none;
-}
-
-.tab-osd-progress-bar::-webkit-progress-bar {
-    background-color: var(--text);
-    border-radius: 4px;
-    box-shadow: inset 0 0 5px #2f2f2f;
-}
-
-.tab-osd-progress-bar::-webkit-progress-value {
-    background-color: #f86008;
-    border-radius: 4px;
-}
-
-.tab-osd-progress-label {
-    grid-area: area;
-    width: 100%;
-    height: 26px;
-    line-height: 26px;
-    text-align: center;
-    color: white;
-    font-weight: bold;
 }
 
 /* Logo info list (validation markers) */

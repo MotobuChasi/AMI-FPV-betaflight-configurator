@@ -98,6 +98,14 @@
                             label-prefix="configurationBoardAlignment"
                             :step="1"
                         />
+                        <UButton
+                            v-if="isApi148"
+                            :label="$t('boardAlignmentWizard-Launch')"
+                            :disabled="!hasAccSensor || accNeedsCalibration"
+                            size="xs"
+                            class="w-fit"
+                            @click="openBoardAlignmentWizard"
+                        />
 
                         <!-- Gyro alignment dropdowns (Legacy, API < 1.47) -->
                         <template v-if="showSensorAlignment">
@@ -266,12 +274,7 @@
                     <!-- Collecting -->
                     <div v-if="alignDetectPhase === 'collecting'" class="flex items-center gap-3 flex-wrap">
                         <div class="flex-1 min-w-48">
-                            <div class="mag-align-progress-bar">
-                                <div
-                                    class="mag-align-progress-fill"
-                                    :style="{ width: alignDetectProgress + '%' }"
-                                ></div>
-                            </div>
+                            <UProgress :model-value="alignDetectProgress" :max="100" size="sm" />
                         </div>
                         <span class="text-xs text-[var(--surface-500)]">{{
                             $t("sensorConfigAlignSamples", { count: alignDetectSampleCount })
@@ -537,9 +540,12 @@
                                     <dt>{{ $t("magCalibrationResidual") }}</dt>
                                     <dd>{{ calResidualText }}</dd>
                                 </dl>
-                                <div v-if="cal.mode !== 'check'" class="mag-cal-progress-bar">
-                                    <div class="mag-cal-progress-fill" :style="{ width: cal.progress + '%' }"></div>
-                                </div>
+                                <UProgress
+                                    v-if="cal.mode !== 'check'"
+                                    :model-value="cal.progress"
+                                    :max="100"
+                                    size="sm"
+                                />
                                 <div v-if="cal.quality" class="text-xs font-semibold text-center">
                                     <span :class="'quality-' + cal.quality"
                                         >{{ $t(CAL_QUALITY_KEY[cal.quality]) }} ({{ cal.qualityScore }}%)</span
@@ -823,6 +829,8 @@ import { sensorTypes } from "../../js/sensor_types";
 import { useMagCalibration, computeDeclination, getGeoReference } from "../../composables/useMagCalibration";
 import { isMspCliSupported } from "../../composables/useMspCliSession";
 import { detectAlignment } from "../../js/utils/magAlignment";
+import { degToRad } from "../../js/utils/common";
+import { useDialog } from "@/composables/useDialog";
 import {
     characterizeTumble,
     currentMatrixOf,
@@ -948,6 +956,32 @@ const boardAlignment = reactive({
     pitch: 0,
     yaw: 0,
 });
+
+const dialog = useDialog();
+
+function openBoardAlignmentWizard() {
+    dialog.open(
+        "BoardAlignmentWizardDialog",
+        {
+            currentAlignment: {
+                roll: boardAlignment.roll,
+                pitch: boardAlignment.pitch,
+                yaw: boardAlignment.yaw,
+            },
+        },
+        {
+            apply: async ({ roll, pitch, yaw }) => {
+                boardAlignment.roll = roll;
+                boardAlignment.pitch = pitch;
+                boardAlignment.yaw = yaw;
+                dialog.close();
+                await nextTick();
+                await saveConfig();
+            },
+            close: () => dialog.close(),
+        },
+    );
+}
 
 // --- Accelerometer Trim ---
 
@@ -1702,7 +1736,7 @@ async function acceptFullCal() {
     const result = characterizeTumble({
         samples,
         currentMatrix: R_cur,
-        inclinationRad: (geoRef.inclination * Math.PI) / 180,
+        inclinationRad: degToRad(geoRef.inclination),
     });
 
     if (!result.ok) {
@@ -2077,8 +2111,6 @@ let altimeterIndicator = null;
 
 const { addInterval, pauseInterval, resumeInterval, removeAllIntervals } = useInterval();
 
-const DEG_TO_RAD = Math.PI / 180;
-
 const CARDINAL_DIRS = ["N", "NE", "E", "SE", "S", "SW", "W", "NW"];
 function toCardinal(deg) {
     return CARDINAL_DIRS[Math.round((((deg % 360) + 360) % 360) / 45) % 8];
@@ -2129,9 +2161,9 @@ function renderModel() {
         return;
     }
     const k = fcStore.sensorData.kinematics;
-    const x = k[1] * -DEG_TO_RAD;
-    const y = (k[2] * -1 - yawFix.value) * DEG_TO_RAD;
-    const z = k[0] * -DEG_TO_RAD;
+    const x = -degToRad(k[1]);
+    const y = degToRad(k[2] * -1 - yawFix.value);
+    const z = -degToRad(k[0]);
     modelInstance.rotateTo(x, y, z);
 }
 
@@ -2565,21 +2597,6 @@ onMounted(() => {
         padding: 0.5rem 0;
     }
 
-    .mag-align-progress-bar {
-        width: 100%;
-        height: 4px;
-        background: var(--surface-300);
-        border-radius: 2px;
-        overflow: hidden;
-    }
-
-    .mag-align-progress-fill {
-        height: 100%;
-        background: var(--primary-500);
-        border-radius: 2px;
-        transition: width 0.3s ease;
-    }
-
     .confidence-high {
         color: var(--success-500);
     }
@@ -2649,21 +2666,6 @@ onMounted(() => {
     .mag-viz-mode-selector .mag-viz-active {
         color: #fff;
         background: #5f5f6d; /* rgba(255,255,255,0.3) over #1a1a2e — contrast 5.5:1 */
-    }
-
-    .mag-cal-progress-bar {
-        width: 100%;
-        height: 5px;
-        background: var(--surface-300);
-        border-radius: 3px;
-        overflow: hidden;
-    }
-
-    .mag-cal-progress-fill {
-        height: 100%;
-        background: var(--primary-500);
-        border-radius: 3px;
-        transition: width 0.3s ease;
     }
 
     .mag-cal-live-inline {
