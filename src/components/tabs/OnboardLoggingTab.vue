@@ -127,7 +127,12 @@
                                             <h3>{{ $t("dataflashSavingTitle") }}</h3>
                                             <div class="dataflash-saving-before">
                                                 <div>{{ $t("dataflashSavingNote") }}</div>
-                                                <UProgress :model-value="saveProgress" :max="100" size="2xl" class="my-4" />
+                                                <UProgress
+                                                    :model-value="saveProgress"
+                                                    :max="100"
+                                                    size="2xl"
+                                                    class="my-4"
+                                                />
                                                 <div class="buttons flex justify-end gap-2 mt-3">
                                                     <UButton
                                                         class="save-flash-cancel"
@@ -305,6 +310,8 @@ import { isExpertModeEnabled } from "../../js/utils/isExpertModeEnabled";
 import NotificationManager from "../../js/utils/notifications";
 import { get as getConfig } from "../../js/ConfigStorage";
 import { sensorTypes } from "../../js/sensor_types";
+import { MspCancelledError } from "../../js/msp/mspErrors";
+import { bit_check, bit_set } from "../../js/bit";
 
 const BLOCK_SIZE = 4096;
 
@@ -571,7 +578,7 @@ export default defineComponent({
             let mask = 0;
             debugFieldsEnabled.value.forEach((enabled, index) => {
                 if (!enabled) {
-                    mask |= 1 << index;
+                    mask = bit_set(mask, index);
                 }
             });
             fcStore.blackbox.blackboxDisabledMask = mask;
@@ -718,7 +725,23 @@ export default defineComponent({
 
                     showSavingDialog();
 
-                    function onChunkRead(chunkAddress, chunkDataView, bytesCompressed) {
+                    function onChunkRead(chunkAddress, chunkDataView, bytesCompressed, error) {
+                        if (error) {
+                            if (error instanceof MspCancelledError) {
+                                dismissSavingDialog();
+                                FileSystem.closeFile(openedFile);
+                                return;
+                            }
+                            console.error("Error reading blackbox log:", error);
+                            gui_log(
+                                `<strong><span class="message-negative">${i18n.getMessage("error", {
+                                    errorMessage: error,
+                                })}</span></strong>`,
+                            );
+                            dismissSavingDialog();
+                            FileSystem.closeFile(openedFile);
+                            return;
+                        }
                         if (chunkDataView !== null) {
                             if (chunkDataView.byteLength > 0) {
                                 nextAddress += chunkDataView.byteLength;
@@ -870,7 +893,7 @@ export default defineComponent({
                 if (showDebugFields.value) {
                     const disabledMask = fcStore.blackbox?.blackboxDisabledMask || 0;
                     debugFieldsEnabled.value = debugStore.enableFields.map((_, index) => {
-                        return (disabledMask & (1 << index)) === 0;
+                        return !bit_check(disabledMask, index);
                     });
                 }
 
